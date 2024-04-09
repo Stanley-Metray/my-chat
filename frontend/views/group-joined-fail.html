@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyChat | Login</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+
+<body>
+  <main class="container">
+    <div class="d-flex justify-content-center align-items-center py-5" style="min-height: 100vh;">
+      <h1 class="text-danger">Failed, already member to this group</h1>
+    </div>
+  </main>
+  <footer class="p-4 text-center text-white">
+    &copy; MyChat 2024
+  </footer>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.8/axios.min.js"
+    integrity="sha512-PJa3oQSLWRB7wHZ7GQ/g+qyv6r4mbuhmiDb8BjSFZ8NZ2a42oTtAq5n0ucWAwcQDlikAtkub+tPVCw4np27WCg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script>
+    localStorage.setItem('fetch', 'true');
+    setTimeout(()=>{window.location.href='/'}, 3000);
+  </script>
+</body>
+</html>

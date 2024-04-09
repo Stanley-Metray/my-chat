@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyChat | Home</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/js/bootstrap.min.js">
+  <link rel="stylesheet" href="/js/bootstrap.min.js">
+
+  <link href="/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+
+<body class="p-0 m-0">
+  <div class="container-fluid">
+    <div class="row">
+      <nav id="sidebar" class="sidebar bg-dark col-md-3">
+        <div class="sidebar-logo d-flex flex-row justify-content-between">
+          <span class="title fs-4">MyChat</span>
+          <!-- <i class="bi bi-arrow-left-circle-fill text-white fs-4 border-1 fw-bolder d-none" id="btn-hide-sidebar"></i> -->
+        </div>
+        <ol class="list-group" id="chats-list">
+          
+        </ol>
+      </nav>
+      <main id="chat-body" class="col-md-9 bg-dark text-light p-0">
+        <div class="row">
+          <div class="col" id="chat">
+            <div class="template text-white" id="template">
+              <div class="chat-box mb-3" id="chat-box">
+                <div class="chat-head bg-dark p-2 ps-3 d-flex gap-2">
+                  <div class="group-icon text-white fs-2">
+                    <i class="bi bi-person-circle"></i>
+                  </div>
+                  <div class="group-status d-flex flex-column">
+                    <p class="m-0 p-0">Web Development Group</p>
+                    <p class="m-0 p-0"><small>online</small></p>
+                  </div>
+                  <div>
+                    <i class="bi bi-sliders" data-bs-toggle="modal" data-bs-target="#staticBackdrop"></i>
+
+                  </div>
+                  <i class="bi bi-arrow-right-circle-fill text-white fs-4 d-none" onclick="showSideBar(event)"></i>
+                </div>
+                <div class="chat">
+                  <div id="message-box" class="message-box d-flex flex-column align-items-start p-3 gap-3">
+
+                  </div>
+                </div>
+              </div>
+              <form id="message-form">
+                <div class="input-group w-100 mb-3 px-3">
+                  <input type="text" name="message" id="message" autocomplete="off" class="form-control" placeholder="Type Message">
+                  <button class="btn btn-primary" type="submit"><strong><i class="bi bi-send"></i> Send</strong></button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <div id="controlls" class="controlls p-2 d-md-flex justify-content-center">
+    <div class="btn-group" role="group" aria-label="Basic checkbox toggle button group">
+      <a href="/create-group" class="btn btn-light btn-sm">Create Group</a>
+    </div>
+  </div>
+  <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div id="modal-dialog" class="modal-dialog modal-lg">
+      
+    </div>
+  </div>
+
+
+
+  <footer class="p-4 text-center text-white">
+    &copy; MyChat 2024
+  </footer>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.8/axios.min.js"
+    integrity="sha512-PJa3oQSLWRB7wHZ7GQ/g+qyv6r4mbuhmiDb8BjSFZ8NZ2a42oTtAq5n0ucWAwcQDlikAtkub+tPVCw4np27WCg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.min.js"></script>
+  <script src="/js/main.js"></script>
+</body>
+
+</html>
