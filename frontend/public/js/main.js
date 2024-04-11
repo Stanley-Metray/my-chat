@@ -6,16 +6,6 @@ function getCookie(name) {
 const user = getCookie('user');
 const token = getCookie('token');
 
-
-
-
-// document.getElementById('btn-hide-sidebar').addEventListener('click', (e) => {
-//   document.getElementById('chat-body').style.display = 'block';
-//   document.getElementById('sidebar').style.display = 'none';
-//   document.getElementById('controlls').style.display = 'none';
-// });
-
-
 const getChats = async () => {
   const fetch = localStorage.getItem('fetch');
   if (fetch === 'false')
@@ -38,21 +28,25 @@ const getChats = async () => {
 }
 
 function setChats() {
-  const chats = JSON.parse(localStorage.getItem('chats')).chats;
+  const storedChats = localStorage.getItem('chats');
+  let chats;
+  if (storedChats) {
+    chats = JSON.parse(localStorage.getItem('chats')).chats;
 
-  let html = '';
-  chats.forEach((chat) => {
-    html += `<li class="list-group-item d-flex justify-content-between align-items-start" id=${chat.id}>
+    let html = '';
+    chats.forEach((chat) => {
+      html += `<li class="list-group-item d-flex justify-content-between align-items-start" id=${chat.id}>
                     <div class="ms-2 me-auto">
                         <div class="fw-bold truncate">${chat.group_name}</div>
                         <p class='truncate'><small>${chat.group_description}</small></p>
                     </div>
                     <span class="badge text-bg-primary rounded-pill">${chat.total_members}</span>
                 </li>`;
-  });
+    });
 
-  document.getElementById('chats-list').innerHTML = html;
-  document.getElementById('chats-list').addEventListener('click', showChat);
+    document.getElementById('chats-list').innerHTML = html;
+    document.getElementById('chats-list').addEventListener('click', showChat);
+  }
 }
 
 async function showChat(e) {
@@ -115,12 +109,12 @@ function setChat(chat) {
           </div>
         </div>
         <form id="message-form" onsubmit="sendMessage(event)">
-          <div class="input-group w-100 mb-3 px-3">
-            <input type="text" name="message" id="message" autocomplete="off" class="form-control"
-              placeholder="Type Message" aria-label="Recipient's username" aria-describedby="button-addon2">
-            <button class="btn btn-primary" type="submit" id="button-addon2"><strong><i class="bi bi-send"></i>
-                Send</strong></button>
-          </div>
+        <div class="input-group px-2">
+        <input type="text" name="message" id="message" autocomplete="off" class="form-control"
+        placeholder="Type Message" aria-label="Recipient's username" aria-describedby="button-addon2">
+        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#fileModal"><i class="bi bi-paperclip"></i></button>
+      <button class="btn btn-primary" type="submit" id="button-addon2"><strong><i class="bi bi-send"></i> Send</strong></button>
+      </div>
         </form>
       </div>
     </div>
@@ -131,10 +125,20 @@ function setChat(chat) {
   let messages = ``;
 
   chat.messages.forEach((msg) => {
-    messages += `<div class="message d-flex flex-column">
+    console.log(msg);
+    if (typeof msg.content !== 'string') {
+      messages += `<div class="message d-flex flex-column">
+      <span class="fs-user">${msg.sender}</span>
+      <a class="nav-link" href='${msg.content.link}' target="_blank" download><i class="bi bi-file-earmark-arrow-down-fill"></i> ${msg.content.fileName}<a/> 
+    </div>`;
+    }
+    else
+    {
+      messages += `<div class="message d-flex flex-column">
     <span class="fs-user">${msg.sender}</span>
     <span>${msg.content}</span>
     </div>`;
+    }
   });
 
   chatBody.innerHTML = html;
@@ -203,48 +207,6 @@ const groupControlls = async (event) => {
     console.log(error);
     alert("Internal server error");
   }
-}
-
-async function sendMessage(e) {
-  e.preventDefault();
-  try {
-    const formData = {
-      content: document.getElementById('message').value,
-      sender: user,
-      chatId: localStorage.getItem('ci')
-    }
-
-    const response = await axios.post('/send-message', formData, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const data = await response.data;
-    if (data.success)
-      setLastMessage(data);
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-const setLastMessage = (data) => {
-  const allChats = JSON.parse(localStorage.getItem('chats'));
-
-  allChats.chats.forEach((chat) => {
-    if (chat.id === localStorage.getItem('ci'))
-      chat.messages.push(data.message);
-  });
-
-  localStorage.setItem('chats', JSON.stringify(allChats));
-  let html = `<div class="message d-flex flex-column">
-  <span class="fs-user">${data.message.sender}</span>
-  <span>${data.message.content}</span>
-</div>`;
-
-  document.getElementById('message-box').innerHTML += html;
-  let chatBox = document.getElementById('chat-box');
-  chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 const makeAdmin = async (event) => {
@@ -324,9 +286,9 @@ const addMember = async (event) => {
     const chatId = localStorage.getItem('ci');
     const phone = document.getElementById('phone').value;
 
-    const response = await axios.post('/add-member', {chatId, phone}, {
-      headers : {
-        'Content-Type' : 'application/json'
+    const response = await axios.post('/add-member', { chatId, phone }, {
+      headers: {
+        'Content-Type': 'application/json'
       }
     });
     const data = await response.data;
@@ -344,3 +306,168 @@ const addMember = async (event) => {
     console.log(error);
   }
 }
+
+
+let count = 0;
+let socket;
+
+async function sendMessage(e) {
+  e.preventDefault();
+  try {
+    if (!socket) {
+      socket = io();
+      socket.on('message', (message) => {
+        console.log("Message received", { msg: message, chatId: localStorage.getItem('ci'), token: token });
+        setLastMessage(message);
+      });
+    }
+
+    let msg = document.getElementById('message').value;
+    const chatId = localStorage.getItem('ci');
+    socket.emit('groupChat', { user: user, chatId: chatId, msg: msg, token: token });
+    msg = '';
+
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+// async function sendMessage(e) {
+//   e.preventDefault();
+//   console.log(localStorage.getItem('ci'));
+//   try {
+//     if (!socket) {
+//       socket = io({
+//         query: {
+//           token: token,
+//           chatId: localStorage.getItem('ci')
+//         }
+//       });
+
+//       socket.on('message', (message) => {
+//         console.log("Message received", message);
+//         console.log(message);
+//         setLastMessage(message);
+//       });
+//     }
+
+//     let msg = document.getElementById('message').value;
+//     socket.emit('groupChat', { user: user, msg: msg });
+//     msg = '';
+
+//   } catch (error) {
+//     console.log(error);
+//   }
+// }
+
+
+
+const setLastMessage = (message) => {
+  const allChats = JSON.parse(localStorage.getItem('chats'));
+
+  allChats.chats.forEach((chat) => {
+    if (chat.id === localStorage.getItem('ci'))
+      chat.messages.push(message);
+  });
+
+  localStorage.setItem('chats', JSON.stringify(allChats));
+  let html = `<div class="message d-flex flex-column">
+  <span class="fs-user">${message.sender}</span>
+  <span>${message.content}</span>
+</div>`;
+
+  document.getElementById('message-box').innerHTML += html;
+  let chatBox = document.getElementById('chat-box');
+  chatBox.scrollTop = chatBox.scrollHeight;
+  html = "";
+}
+
+
+document.getElementById('send-file-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    const fileInput = document.getElementById('file-input');
+    const file = fileInput.files[0];
+    if (!file) {
+      alert('Please select a file to upload');
+      return;
+    }
+
+    const fileName = file.name;
+    const fileType = file.type;
+    console.log(fileName, fileType);
+
+    const response = await axios.post('/generate-presigned-url', {fileName, fileType}, {
+      headers : {
+        'Content-Type' : 'application/json'
+      }
+    });
+
+    const data = await response.data;
+    const presignedUrl = data.url;
+    const objectUrl = data.objectUrl;
+
+    await uploadFile(file, presignedUrl);
+
+    const message = {
+      type: 'file',
+      content: `Attachment: ${fileName}`,
+      fileType,
+      link: objectUrl,
+      timestamp: Date.now()
+    }
+
+    sendFileMessage(message);
+
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+async function uploadFile(file, presignedUrl){
+  const response = await fetch(presignedUrl, {
+    method: 'PUT',
+    body: file
+  });
+
+  if(!response.ok)
+    throw new Error('Error uploading file to S3');
+}
+
+const sendFileMessage = async (message)=>{
+  try {
+    if (!socket) {
+      socket = io();
+      socket.on('file-message', (message) => {
+        setLastFileMessage(message);
+      });
+    }
+
+    const chatId = localStorage.getItem('ci');
+    socket.emit('groupChat', { user: user, chatId: chatId, msg: message, token: token });
+    msg = '';
+
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+const setLastFileMessage = (message) => {
+  const allChats = JSON.parse(localStorage.getItem('chats'));
+  allChats.chats.forEach((chat) => {
+    if (chat.id === localStorage.getItem('ci'))
+      chat.messages.push(message);
+  });
+
+  localStorage.setItem('chats', JSON.stringify(allChats));
+  let html = `<div class="message d-flex flex-column">
+  <span class="fs-user">~${message.sender}</span>
+  <a class="nav-link" href='${msg.content.link}' target="_blank" download><i class="bi bi-file-earmark-arrow-down-fill"></i> ${msg.content.fileName}<a/> 
+</div>`;
+
+  document.getElementById('message-box').innerHTML += html;
+  let chatBox = document.getElementById('chat-box');
+  chatBox.scrollTop = chatBox.scrollHeight;
+  html = "";
+}
+

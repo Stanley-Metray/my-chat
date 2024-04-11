@@ -246,11 +246,11 @@ background: linear-gradient(to right, #274046, #E6DADA); /* W3C, IE 10+/ Edge, F
 }
 
 .message:nth-child(even) {
-    background: #203541;
+    background: #2d98da;
 }
 
 .message:nth-child(odd) {
-    background: #374955;
+    background: #8854d0;
 }
 
 .fs-user {

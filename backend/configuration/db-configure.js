@@ -1,4 +1,3 @@
-const sequelize = require('../connection/connect');
 const User = require('../models/user');
 const Message = require('../models/message');
 const Chat = require('../models/chat');
