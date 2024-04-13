@@ -8,14 +8,14 @@ module.exports.chatSocket = async (io) => {
             const chatId = message.chatId;
             const userId = await authController.verifyTokenForSocket(message.token);
             socket.join(`${chatId}`);
-            await Message.create({ userId: userId, chatId: chatId, content: message.msg.content, sender: message.user });
-            if (message.msg.type === 'file')
+            const createdMessage =  await Message.create({ userId: userId, chatId: chatId, content: JSON.stringify(message.msg), sender: message.user });
+            if (message.msg.isAttachment)
             {
-                io.to(`${chatId}`).emit('file-message', { sender: message.user, content: {link: message.msg.link, fileName:message.msg.content, fileType:message.msg.fileType, timestamp:message.msg.timestamp}});
+                io.to(`${chatId}`).emit('file-message', { sender: createdMessage.sender, content: {content : JSON.parse(createdMessage.content), link:createdMessage.link, createdAt: createdMessage.createdAt}});
             }
             else
             {
-                io.to(`${chatId}`).emit('message', { sender: message.user, content: message.msg });
+                io.to(`${chatId}`).emit('message', { sender: createdMessage.sender, content: {content : JSON.parse(createdMessage.content), createdAt: createdMessage.createdAt} });
             }
         });
     });

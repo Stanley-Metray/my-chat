@@ -125,18 +125,17 @@ function setChat(chat) {
   let messages = ``;
 
   chat.messages.forEach((msg) => {
-    console.log(msg);
-    if (typeof msg.content !== 'string') {
+    const objMessage = JSON.parse(msg.content);
+    if (objMessage.isAttachment) {
       messages += `<div class="message d-flex flex-column">
       <span class="fs-user">${msg.sender}</span>
-      <a class="nav-link" href='${msg.content.link}' target="_blank" download><i class="bi bi-file-earmark-arrow-down-fill"></i> ${msg.content.fileName}<a/> 
+      <a class="nav-link" href='${objMessage.link}' target="_blank" download><i class="bi bi-file-earmark-arrow-down-fill"></i> ${objMessage.content}<a/> 
     </div>`;
     }
-    else
-    {
+    else {
       messages += `<div class="message d-flex flex-column">
     <span class="fs-user">${msg.sender}</span>
-    <span>${msg.content}</span>
+    <div>${objMessage.content}</div>
     </div>`;
     }
   });
@@ -257,8 +256,8 @@ const removeMember = async (event) => {
   }
 }
 
-const searchUserByPhone = async (evet) => {
-  evet.preventDefault();
+const searchUserByPhone = async (event) => {
+  event.preventDefault();
   try {
     const phoneNumber = document.getElementById('phone').value;
     if (phoneNumber.length < 10 || phoneNumber.length > 10)
@@ -317,14 +316,14 @@ async function sendMessage(e) {
     if (!socket) {
       socket = io();
       socket.on('message', (message) => {
-        console.log("Message received", { msg: message, chatId: localStorage.getItem('ci'), token: token });
+        console.log("Message received", { msg: message });
         setLastMessage(message);
       });
     }
 
     let msg = document.getElementById('message').value;
     const chatId = localStorage.getItem('ci');
-    socket.emit('groupChat', { user: user, chatId: chatId, msg: msg, token: token });
+    socket.emit('groupChat', { user: user, chatId: chatId, msg: { content: msg, isAttachment: false }, token: token });
     msg = '';
 
   } catch (error) {
@@ -362,24 +361,26 @@ async function sendMessage(e) {
 
 
 
-const setLastMessage = (message) => {
+const setLastMessage = (msg) => {
   const allChats = JSON.parse(localStorage.getItem('chats'));
-
+  const objMessage = msg.content.content;
   allChats.chats.forEach((chat) => {
     if (chat.id === localStorage.getItem('ci'))
-      chat.messages.push(message);
+      {
+        chat.messages.push({sender: msg.sender, content: JSON.stringify({content:objMessage.content, isAttachment: objMessage.isAttachment}), createdAt:msg.content.createdAt});
+      }
   });
 
   localStorage.setItem('chats', JSON.stringify(allChats));
+  
   let html = `<div class="message d-flex flex-column">
-  <span class="fs-user">${message.sender}</span>
-  <span>${message.content}</span>
-</div>`;
-
+    <span class="fs-user">${msg.sender}</span>
+    <div>${objMessage.content}</div>
+    </div>`;
+  
   document.getElementById('message-box').innerHTML += html;
   let chatBox = document.getElementById('chat-box');
   chatBox.scrollTop = chatBox.scrollHeight;
-  html = "";
 }
 
 
@@ -397,9 +398,9 @@ document.getElementById('send-file-form').addEventListener('submit', async (e) =
     const fileType = file.type;
     console.log(fileName, fileType);
 
-    const response = await axios.post('/generate-presigned-url', {fileName, fileType}, {
-      headers : {
-        'Content-Type' : 'application/json'
+    const response = await axios.post('/generate-presigned-url', { fileName, fileType }, {
+      headers: {
+        'Content-Type': 'application/json'
       }
     });
 
@@ -410,8 +411,8 @@ document.getElementById('send-file-form').addEventListener('submit', async (e) =
     await uploadFile(file, presignedUrl);
 
     const message = {
-      type: 'file',
-      content: `Attachment: ${fileName}`,
+      isAttachment: true,
+      content: `${fileName}`,
       fileType,
       link: objectUrl,
       timestamp: Date.now()
@@ -424,17 +425,17 @@ document.getElementById('send-file-form').addEventListener('submit', async (e) =
   }
 });
 
-async function uploadFile(file, presignedUrl){
+async function uploadFile(file, presignedUrl) {
   const response = await fetch(presignedUrl, {
     method: 'PUT',
     body: file
   });
 
-  if(!response.ok)
+  if (!response.ok)
     throw new Error('Error uploading file to S3');
 }
 
-const sendFileMessage = async (message)=>{
+const sendFileMessage = async (message) => {
   try {
     if (!socket) {
       socket = io();
@@ -452,17 +453,18 @@ const sendFileMessage = async (message)=>{
   }
 }
 
-const setLastFileMessage = (message) => {
+const setLastFileMessage = (msg) => {
   const allChats = JSON.parse(localStorage.getItem('chats'));
+  const objMessage = msg.content.content;
   allChats.chats.forEach((chat) => {
     if (chat.id === localStorage.getItem('ci'))
-      chat.messages.push(message);
+      chat.messages.push({sender: msg.sender, content: JSON.stringify({content:objMessage.content, isAttachment: objMessage.isAttachment, link:objMessage.link}), createdAt:msg.content.createdAt});
   });
 
   localStorage.setItem('chats', JSON.stringify(allChats));
   let html = `<div class="message d-flex flex-column">
-  <span class="fs-user">~${message.sender}</span>
-  <a class="nav-link" href='${msg.content.link}' target="_blank" download><i class="bi bi-file-earmark-arrow-down-fill"></i> ${msg.content.fileName}<a/> 
+  <span class="fs-user">${msg.sender}</span>
+  <a class="nav-link" href='${objMessage.link}' target="_blank" download><i class="bi bi-file-earmark-arrow-down-fill"></i> ${objMessage.content}<a/> 
 </div>`;
 
   document.getElementById('message-box').innerHTML += html;

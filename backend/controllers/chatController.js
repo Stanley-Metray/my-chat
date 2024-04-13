@@ -28,7 +28,7 @@ module.exports.postSendMessage = async (req, res) => {
 module.exports.getMessages = async (req, res) => {
     try {
         const chatId = req.params.id;
-        const messages = await Message.findAll({ where: { chatId: chatId } });
+        const messages = await Message.findAll({ where: { chatId: chatId }, attributes: ["sender", "content", "createdAt"] });
         res.status(200).json({ success: true, message: messages });
     } catch (error) {
         if (error.errors instanceof Array)
@@ -109,7 +109,7 @@ module.exports.getAllChats = async (req, res) => {
         let newChats = JSON.parse(JSON.stringify(chats));
 
         await Promise.all(newChats.map(async (chat) => {
-            const chatMessages = await Message.findAll({ where: { chatId: chat.id } });
+            const chatMessages = await Message.findAll({ where: { chatId: chat.id }, attributes : ["sender", "content", "createdAt"] });
             const chatJoinLink = await JoinLink.findOne({ where: { chatId: chat.id } });
             Object.assign(chat, { messages: chatMessages, joinLink: chatJoinLink.link });
         }));

@@ -9,19 +9,21 @@ const cookieParser = require('cookie-parser');
 const sequelize = require('../backend/connection/connect');
 require('../backend/configuration/db-configure').config();
 const routerConfig = require('../backend/configuration/router-config');
+const cronJobs = require('./utilities/cronJobs');
 
 const app = express();
 const server = createServer(app);
 const io = new Server(server);
 
 socketManager.chatSocket(io);
+cronJobs.archiveDailyMessages();
 
 app.use(cors({
     origin: ["http://localhost:3000", "https://mychat1.s3.amazonaws.com"],
     methods: ["GET", "POST", "PUT"],
     credentials: true
 }));
-
+ 
 app.use(express.json());
 app.use(cookieParser());
 app.use('/js', express.static(path.join(__dirname, '../frontend/public/js')));

@@ -1,12 +1,12 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../connection/connect');
 
-module.exports = Message = sequelize.define('message', {
+module.exports = ArchivedMessage = sequelize.define('archived_message', {
     id : {
         type : DataTypes.INTEGER,
-        primaryKey : true,
         allowNull : false,
-        autoIncrement : true
+        autoIncrement : true,
+        primaryKey : true
     },
     content : {
         type : DataTypes.JSON,
