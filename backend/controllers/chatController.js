@@ -45,7 +45,7 @@ module.exports.postCreateChat = async (req, res) => {
         const chatId = uuidv4();
         const createdChat = await Chat.create({ id: chatId, ...req.body }, { transaction: t });
         const linkId = uuidv4();
-        const link = `http://localhost:3500/group/${linkId}`;
+        const link = `http://54.81.24.73:3000/group/${linkId}`;
         const createdLink = await JoinLink.create({ id: linkId, link: link, chatId: chatId }, { transaction: t });
         await GroupMembers.create({ userId: req.body.userId, chatId: chatId, user_name: req.cookies.user, isAdmin: true }, { transaction: t });
         await t.commit();
