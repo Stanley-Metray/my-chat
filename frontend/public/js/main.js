@@ -3,6 +3,10 @@ function getCookie(name) {
   return cookieValue ? cookieValue.pop() : '';
 }
 
+let socket;
+
+if (!socket)
+  socket = io();
 const user = getCookie('user');
 const token = getCookie('token');
 
@@ -40,7 +44,6 @@ function setChats() {
                         <div class="fw-bold truncate">${chat.group_name}</div>
                         <p class='truncate'><small>${chat.group_description}</small></p>
                     </div>
-                    <span class="badge text-bg-primary rounded-pill">${chat.total_members}</span>
                 </li>`;
     });
 
@@ -52,7 +55,6 @@ function setChats() {
 async function showChat(e) {
   if (e.target.tagName === 'LI') {
     try {
-
       const chatId = e.target.id;
       const chats = JSON.parse(localStorage.getItem('chats')).chats;
       let chat = chats.filter((chat) => {
@@ -84,6 +86,7 @@ chatBody.style.visibility = 'hidden';
 
 function setChat(chat) {
   localStorage.setItem('ci', chat.id);
+  socket.emit('join', { chatId: chat.id });
   const html = `<div class="row">
     <div class="col" id="chat">
       <div class="template text-white" id="template">
@@ -143,6 +146,7 @@ function setChat(chat) {
   chatBody.innerHTML = html;
   document.getElementById('message-box').innerHTML = messages;
   chatBody.style.visibility = 'visible';
+  document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
 }
 
 const showSideBar = (e) => {
@@ -295,7 +299,8 @@ const addMember = async (event) => {
       let html = `<li class="list-group-item bg-light text-dark">*. <strong>${data.member.user_name} - <div class="btn-group" role="group" aria-label="Basic mixed styles example">
         <button data-bs-ci=${data.member.chatId} data-bs-ui=${data.member.userId} onclick="makeAdmin(event)" type="button" class="btn btn-sm btn-warning">Make Admin</button>
         <button data-bs-ci=${data.member.chatId} data-bs-ui=${data.member.userId} onclick="removeMember(event)" type="button" class="btn btn-sm btn-danger"><i data-bs-ci=${data.member.chatId} data-bs-ui=${data.member.userId} onclick="removeMember(event)" class="bi bi-trash3-fill"></i></button>
-      </div></li>`
+      </div></li>`;
+      socket.emit('add-member', {added:true});
       document.getElementById('members').innerHTML += html;
       alert(data.message);
     }
@@ -306,78 +311,39 @@ const addMember = async (event) => {
   }
 }
 
+socket.on('member-added', ()=>{
+  localStorage.setItem('fetch', 'true');
+  window.location.reload();
+});
 
-let count = 0;
-let socket;
-
-async function sendMessage(e) {
+function sendMessage(e) {
   e.preventDefault();
-  try {
-    if (!socket) {
-      socket = io();
-      socket.on('message', (message) => {
-        console.log("Message received", { msg: message });
-        setLastMessage(message);
-      });
-    }
-
-    let msg = document.getElementById('message').value;
-    const chatId = localStorage.getItem('ci');
-    socket.emit('groupChat', { user: user, chatId: chatId, msg: { content: msg, isAttachment: false }, token: token });
-    msg = '';
-
-  } catch (error) {
-    console.log(error);
-  }
+  let msg = document.getElementById('message');
+  const chatId = localStorage.getItem('ci');
+  socket.emit('groupChat', { user: user, chatId: chatId, msg: { content: msg.value, isAttachment: false }, token: token });
+  msg.value = '';
 }
 
-// async function sendMessage(e) {
-//   e.preventDefault();
-//   console.log(localStorage.getItem('ci'));
-//   try {
-//     if (!socket) {
-//       socket = io({
-//         query: {
-//           token: token,
-//           chatId: localStorage.getItem('ci')
-//         }
-//       });
-
-//       socket.on('message', (message) => {
-//         console.log("Message received", message);
-//         console.log(message);
-//         setLastMessage(message);
-//       });
-//     }
-
-//     let msg = document.getElementById('message').value;
-//     socket.emit('groupChat', { user: user, msg: msg });
-//     msg = '';
-
-//   } catch (error) {
-//     console.log(error);
-//   }
-// }
-
-
+socket.on('message', (message) => {
+  setLastMessage(message);
+});
 
 const setLastMessage = (msg) => {
   const allChats = JSON.parse(localStorage.getItem('chats'));
   const objMessage = msg.content.content;
   allChats.chats.forEach((chat) => {
-    if (chat.id === localStorage.getItem('ci'))
-      {
-        chat.messages.push({sender: msg.sender, content: JSON.stringify({content:objMessage.content, isAttachment: objMessage.isAttachment}), createdAt:msg.content.createdAt});
-      }
+    if (chat.id === localStorage.getItem('ci')) {
+      chat.messages.push({ sender: msg.sender, content: JSON.stringify({ content: objMessage.content, isAttachment: objMessage.isAttachment }), createdAt: msg.content.createdAt });
+    }
   });
 
   localStorage.setItem('chats', JSON.stringify(allChats));
-  
+
   let html = `<div class="message d-flex flex-column">
     <span class="fs-user">${msg.sender}</span>
     <div>${objMessage.content}</div>
     </div>`;
-  
+
   document.getElementById('message-box').innerHTML += html;
   let chatBox = document.getElementById('chat-box');
   chatBox.scrollTop = chatBox.scrollHeight;
@@ -437,28 +403,27 @@ async function uploadFile(file, presignedUrl) {
 
 const sendFileMessage = async (message) => {
   try {
-    if (!socket) {
-      socket = io();
-      socket.on('file-message', (message) => {
-        setLastFileMessage(message);
-      });
-    }
+    if (!socket)
+      socket = io();    
 
     const chatId = localStorage.getItem('ci');
     socket.emit('groupChat', { user: user, chatId: chatId, msg: message, token: token });
-    msg = '';
 
   } catch (error) {
     console.log(error);
   }
 }
 
+socket.on('file-message', (message) => {
+  setLastFileMessage(message);
+});
+
 const setLastFileMessage = (msg) => {
   const allChats = JSON.parse(localStorage.getItem('chats'));
   const objMessage = msg.content.content;
   allChats.chats.forEach((chat) => {
     if (chat.id === localStorage.getItem('ci'))
-      chat.messages.push({sender: msg.sender, content: JSON.stringify({content:objMessage.content, isAttachment: objMessage.isAttachment, link:objMessage.link}), createdAt:msg.content.createdAt});
+      chat.messages.push({ sender: msg.sender, content: JSON.stringify({ content: objMessage.content, isAttachment: objMessage.isAttachment, link: objMessage.link }), createdAt: msg.content.createdAt });
   });
 
   localStorage.setItem('chats', JSON.stringify(allChats));
@@ -470,6 +435,5 @@ const setLastFileMessage = (msg) => {
   document.getElementById('message-box').innerHTML += html;
   let chatBox = document.getElementById('chat-box');
   chatBox.scrollTop = chatBox.scrollHeight;
-  html = "";
 }
 

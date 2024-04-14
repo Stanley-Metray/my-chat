@@ -2,22 +2,28 @@ const authController = require('../controllers/authController');
 const Message = require('../models/message');
 // const MissedMessages = require('../models/missed-messages');
 
-module.exports.chatSocket = async (io) => {
+module.exports.chatSocket = (io) => {
     io.on('connection', (socket) => {
+        socket.on('join', (group)=>{
+            socket.join(group.chatId);
+        });
+
         socket.on('groupChat', async (message) => {
             const chatId = message.chatId;
             const userId = await authController.verifyTokenForSocket(message.token);
-            socket.join(`${chatId}`);
             const createdMessage =  await Message.create({ userId: userId, chatId: chatId, content: JSON.stringify(message.msg), sender: message.user });
             if (message.msg.isAttachment)
             {
                 io.to(`${chatId}`).emit('file-message', { sender: createdMessage.sender, content: {content : JSON.parse(createdMessage.content), link:createdMessage.link, createdAt: createdMessage.createdAt}});
             }
             else
-            {
                 io.to(`${chatId}`).emit('message', { sender: createdMessage.sender, content: {content : JSON.parse(createdMessage.content), createdAt: createdMessage.createdAt} });
-            }
         });
+
+        socket.on('add-member', () => {
+            socket.broadcast.emit('member-added', { fetch: true });
+        });
+        
     });
 }
 

@@ -197,7 +197,7 @@ module.exports.postAddMember = async (req, res) => {
         const user = await GroupMembers.findOne({ where: { userId, chatId } });
         if (user.isAdmin) {
             const member = await User.findOne({ where: { phone: phone }, attributes: ["id", "first_name"] });
-            const isMember = await GroupMembers.findOne({where : {userId : member.id}});
+            const isMember = await GroupMembers.findOne({where : {userId : member.id, chatId:chatId}});
             
             if(isMember)
                 return res.status(404).json({ success: false, message: "Already a member"});
