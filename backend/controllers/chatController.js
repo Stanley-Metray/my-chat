@@ -29,6 +29,7 @@ module.exports.getMessages = async (req, res) => {
     try {
         const chatId = req.params.id;
         const messages = await Message.findAll({ where: { chatId: chatId }, attributes: ["sender", "content", "createdAt"] });
+        console.log(messages);
         res.status(200).json({ success: true, message: messages });
     } catch (error) {
         if (error.errors instanceof Array)
