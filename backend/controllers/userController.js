@@ -58,7 +58,7 @@ module.exports.postLoginUser = async (req, res) => {
 
         let tokens = [];
         if (user.tokens && user.tokens.length > 0) {
-            tokens = JSON.parse(user.tokens);
+            tokens = JSON.parse(JSON.parse(user.tokens)); // this is because this version of nosql is not support JSON datatype
         }
         tokens.push(token);
         user.tokens = JSON.stringify(tokens);
