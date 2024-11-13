@@ -9,7 +9,7 @@ module.exports = ArchivedMessage = sequelize.define('archived_message', {
         primaryKey : true
     },
     content : {
-        type : DataTypes.JSON,
+        type : DataTypes.TEXT,
         allowNull : true
     },
     sender : {

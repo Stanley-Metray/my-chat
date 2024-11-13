@@ -9,7 +9,7 @@ module.exports = Message = sequelize.define('message', {
         autoIncrement : true
     },
     content : {
-        type : DataTypes.JSON,
+        type : DataTypes.TEXT,
         allowNull : true
     },
     sender : {
