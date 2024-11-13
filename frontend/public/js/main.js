@@ -126,9 +126,9 @@ function setChat(chat) {
 
 
   let messages = ``;
-
   chat.messages.forEach((msg) => {
-    const objMessage = JSON.parse(msg.content);
+    
+    const objMessage = JSON.parse(JSON.parse(msg.content)); // double parsing because current server of mysql does not support JSON datatype
     if (objMessage.isAttachment) {
       messages += `<div class="message d-flex flex-column">
       <span class="fs-user">${msg.sender}</span>

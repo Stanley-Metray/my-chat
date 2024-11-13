@@ -29,6 +29,7 @@ module.exports.getMessages = async (req, res) => {
     try {
         const chatId = req.params.id;
         const messages = await Message.findAll({ where: { chatId: chatId }, attributes: ["sender", "content", "createdAt"] });
+        console.log(messages);
         res.status(200).json({ success: true, message: messages });
     } catch (error) {
         if (error.errors instanceof Array)
@@ -45,7 +46,7 @@ module.exports.postCreateChat = async (req, res) => {
         const chatId = uuidv4();
         const createdChat = await Chat.create({ id: chatId, ...req.body }, { transaction: t });
         const linkId = uuidv4();
-        const link = `http://54.81.24.73:3000/group/${linkId}`;
+        const link = `https://my-chat-w4ur.onrender.com/group/${linkId}`;
         const createdLink = await JoinLink.create({ id: linkId, link: link, chatId: chatId }, { transaction: t });
         await GroupMembers.create({ userId: req.body.userId, chatId: chatId, user_name: req.cookies.user, isAdmin: true }, { transaction: t });
         await t.commit();

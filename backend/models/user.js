@@ -31,6 +31,6 @@ module.exports = User = sequelize.define('user', {
     },
     tokens : {
         type : DataTypes.JSON,
-        defaultValue : []
+        defaultValue : ""
     }
 });
